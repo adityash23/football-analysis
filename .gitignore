@@ -1,0 +1,17 @@
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Roboflow custom training V5
+training\training-yolov5.ipynb
+
+# yolov10
+yolov10m.pt
+
+# Output of running v10
+runs/
+
+# Input videos to be analyzed
+input-videos/
