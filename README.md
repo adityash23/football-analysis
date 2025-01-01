@@ -1,3 +1,7 @@
+# Description
+
+Implementing a smart tracker that captures player movements in a gameplay
+
 # Features
 
 Reasons for using Roboflow -
