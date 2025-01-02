@@ -1,5 +1,7 @@
 from tracker import Tracker
 from utils import read_video, save_video
+from analysis import TeamAssigner
+import cv2
 
 '''
 # return frames of a video based on the given path
@@ -34,9 +36,15 @@ def main():
 
     # initialize tracker
     tracker = Tracker('models/best.pt')
-    tracks = tracker.get_object_tracks(video_frames, read_from_file=True, file_path='stubs/trackSubs.pkl')
+    tracks = tracker.get_object_tracks(video_frames, read_from_file=True, file_path='tracks/tracks.pkl')
+
+    # assign teams
+    team_assigner = TeamAssigner()
+    team_assigner.assign_team_color(video_frames[0], tracks['players'][0])
+
+    
 
     # annotate input video
     output_video_frames = tracker.annotate(video_frames, tracks)
 
-    save_video(output_video_frames, 'output-videos/output-video1.avi')
+    save_video(output_video_frames, 'outputVideos/output_video1.avi')
