@@ -38,11 +38,23 @@ def main():
     tracker = Tracker('models/best.pt')
     tracks = tracker.get_object_tracks(video_frames, read_from_file=True, file_path='tracks/tracks.pkl')
 
+    # interpolate ball 
+    tracks['ball'] = tracker.interpolate_ball(tracks['ball'])
+
     # assign teams
     team_assigner = TeamAssigner()
     team_assigner.assign_team_color(video_frames[0], tracks['players'][0])
 
-    
+    for frame_num, player_track in enumerate(tracks['players']):
+        for player_id, track in player_track.items():
+            # get team
+            team = team_assigner.get_player_team(video_frames[frame_num],
+                                                 track['bounding_box'],
+                                                 player_id)
+            
+            # save team in dict
+            tracks['players'][frame_num][player_id]['team'] = team
+            tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors[team]
 
     # annotate input video
     output_video_frames = tracker.annotate(video_frames, tracks)

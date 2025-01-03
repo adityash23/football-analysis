@@ -7,6 +7,7 @@ import os
 import sys
 sys.path.append('../') # move 1 folder up in heirarchy
 from utils import get_center, get_width
+import pandas as pd
 
 class Tracker:
     def __init__(self, model_path):
@@ -14,6 +15,23 @@ class Tracker:
         self.tracker = supervision.ByteTrack() # to prevent ID changes for objects 
         # ex - goal keeper changes to player in some frames
 
+    def interpolate_ball(self, ball_positions):
+        # if ball not detected in some frames, the triangle tracker disappears between frame A and B
+        # in such a case, we can assume the path the ball would have taken b/w A and B and move tracker there
+        ball_positions = [x.get(1, {}).get('bounding_box', []) for x in ball_positions]
+
+        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+        # interpolate missing values
+        df_ball_positions = df_ball_positions.interpolate()
+        
+        # if the first frame in list is missing, interpolate doesn't work - do backfill
+        df_ball_positions = df_ball_positions.bfill()
+
+        ball_positions = [{1 : {'bounding_box' : x}} for x in df_ball_positions.to_numpy().tolist()]
+
+        return ball_positions
+    
     def detect_frames(self, frames):
         batch_size = 20
         detections = []
@@ -168,15 +186,16 @@ class Tracker:
             referee_dict = tracks['referees'][frame_num]
             ball_dict = tracks['ball'][frame_num]
 
-            # draw players
+            # draw player trackers
             for track_id, player in player_dict.items():
-                frame = self.draw_ellipse(frame, player['bounding_box'], (0, 0, 255), track_id)
+                color = player.get('team_color', (0,0,255)) # get team color
+                frame = self.draw_ellipse(frame, player['bounding_box'], color, track_id) # draw tracker with team color
 
-            # draw referees
+            # draw referee trackers
             for _, referee in referee_dict.items():
                 frame = self.draw_ellipse(frame, referee['bounding_box'], (0, 255, 255), track_id)
         
-            # draw ball
+            # draw ball tracker
             for track_id, ball in ball_dict.items():
                 frame = self.draw_triangle(frame, ball['bounding_box'], (0, 255, 0))
                 
