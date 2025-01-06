@@ -5,3 +5,7 @@ def get_center(bounding_box):
 
 def get_width(boudning_box):
     return boudning_box[2] - boudning_box[0] # x2 - x1
+
+def distance(p1, p2):
+    sum = (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
+    return sum ** 0.5

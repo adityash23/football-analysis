@@ -1,7 +1,7 @@
 from tracker import Tracker
 from utils import read_video, save_video
-from analysis import TeamAssigner
-import cv2
+from analysis import TeamAssigner, Player_Ball_Assigner
+import cv2 
 
 '''
 # return frames of a video based on the given path
@@ -55,6 +55,17 @@ def main():
             # save team in dict
             tracks['players'][frame_num][player_id]['team'] = team
             tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors[team]
+
+    # assigning ball
+    player_assigner = Player_Ball_Assigner()
+    for frame_num, player_track in enumerate(tracks['players']):
+        ball_box = tracks['ball'][frame_num][1]['bounding_box']
+        assigned_player = player_assigner.assign_ball(player_track, ball_box)
+
+        if assigned_player != -1: # -1 means no player assigned
+            # set the has_ball parameter of the player to True
+            tracks['players'][frame_num][assigned_player]['has_ball'] = True
+
 
     # annotate input video
     output_video_frames = tracker.annotate(video_frames, tracks)
