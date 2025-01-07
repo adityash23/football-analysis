@@ -1,7 +1,7 @@
 import sys
 from utils import get_center, distance
 
-class Player_Ball_Assigner:
+class PlayerBallAssigner:
     def __init__(self):
         self.max_player_ball_distance = 70
 

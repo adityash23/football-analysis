@@ -175,8 +175,32 @@ class Tracker:
         cv2.drawContours(frame, [triangle_points], 0, (0,0,0), 2) # draw boundary - non fill triangle with only the edges
 
         return frame
+    
+    def draw_ball_control(frame, frame_num, ball_possession_team):
+        # draw translucent rectangle to show control stats
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (1350, 850), (1900, 980), (255, 255, 255), cv2.FILLED)
+        alpha = 0.4 # 40% transparency
 
-    def annotate(self, video_frames, tracks):
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
+        ball_possession_team_till_current = ball_possession_team[ : frame_num + 1]
+
+        # find number of times each team controls the ball
+        possession_team_1 = ball_possession_team_till_current[ball_possession_team_till_current == 1].shape[0]
+        possession_team_2 = ball_possession_team_till_current[ball_possession_team_till_current == 2].shape[0]
+
+        team_1_frames = possession_team_1 / (possession_team_1 + possession_team_2)
+        team_2_frames = possession_team_2 / (possession_team_1 + possession_team_2)
+
+        cv2.putText(frame, f"Team 1 Possession - {team_1_frames * 100:.2f}%", (1400, 900), 
+                    cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 3)
+        cv2.putText(frame, f"Team 2 Possession - {team_2_frames * 100:.2f}%", (1400, 900), 
+                    cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 3)
+        
+        return frame
+
+    def annotate(self, video_frames, tracks, ball_possession_team):
         output_frames = [] # video frames after creating the circles
 
         for frame_num, frame in enumerate(video_frames):
@@ -202,6 +226,9 @@ class Tracker:
             # draw ball tracker
             for track_id, ball in ball_dict.items():
                 frame = self.draw_triangle(frame, ball['bounding_box'], (0, 255, 0))
+
+            # draw ball control by teams
+            frame = self.draw_ball_control(frame, frame_num, ball_possession_team)
                 
             output_frames.append(frame)
 

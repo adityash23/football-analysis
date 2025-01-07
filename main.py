@@ -1,7 +1,8 @@
 from tracker import Tracker
 from utils import read_video, save_video
-from analysis import TeamAssigner, Player_Ball_Assigner
+from analysis import TeamAssigner, PlayerBallAssigner, CameraMovementEstimator
 import cv2 
+import numpy as np
 
 '''
 # return frames of a video based on the given path
@@ -38,6 +39,12 @@ def main():
     tracker = Tracker('models/best.pt')
     tracks = tracker.get_object_tracks(video_frames, read_from_file=True, file_path='tracks/tracks.pkl')
 
+    # handle camera movement
+    cam_movement_estimator = CameraMovementEstimator(video_frames[0])
+    cam_movement_per_frame = cam_movement_estimator.get_camera_movement(video_frames,
+                                                                        read_from_file=True, 
+                                                                        file_path='stubs/camera_movement.pkl')
+
     # interpolate ball 
     tracks['ball'] = tracker.interpolate_ball(tracks['ball'])
 
@@ -57,7 +64,9 @@ def main():
             tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors[team]
 
     # assigning ball
-    player_assigner = Player_Ball_Assigner()
+    player_assigner = PlayerBallAssigner()
+    ball_possession_team = [] # assigning a team name to each frame - tells the team in control of ball
+
     for frame_num, player_track in enumerate(tracks['players']):
         ball_box = tracks['ball'][frame_num][1]['bounding_box']
         assigned_player = player_assigner.assign_ball(player_track, ball_box)
@@ -65,9 +74,16 @@ def main():
         if assigned_player != -1: # -1 means no player assigned
             # set the has_ball parameter of the player to True
             tracks['players'][frame_num][assigned_player]['has_ball'] = True
+            ball_possession_team.append(tracks['players'][frame_num][assigned_player]['team'])
+        else:
+            ball_possession_team.append(ball_possession_team[-1])
 
-
+    ball_possession_team = np.array(ball_possession_team)
     # annotate input video
-    output_video_frames = tracker.annotate(video_frames, tracks)
+    output_video_frames = tracker.annotate(video_frames, tracks, ball_possession_team)
 
+    # draw camera movement
+    output_video_frames = cam_movement_estimator.draw_camera_movement(output_video_frames, cam_movement_per_frame)
+
+    # save video
     save_video(output_video_frames, 'outputVideos/output_video1.avi')

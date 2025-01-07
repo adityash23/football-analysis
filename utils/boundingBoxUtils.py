@@ -9,3 +9,6 @@ def get_width(boudning_box):
 def distance(p1, p2):
     sum = (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
     return sum ** 0.5
+
+def xy_difference(p1, p2):
+    return p1[0] - p2[0], p1[1] - p2[1]
