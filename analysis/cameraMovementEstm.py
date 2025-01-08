@@ -39,6 +39,15 @@ class CameraMovementEstimator():
             mask = mask_features
         )
 
+    def adjust_positions(self, tracks, camera_movement_per_frame):
+        for obj, obj_tracks in tracks.items():
+            for frame_num, track in enumerate(obj_tracks):
+                for track_id, track_info in track.items():
+                    position = track_info['position']
+                    camera_movement = camera_movement_per_frame[frame_num]
+                    position_adjusted = (position[0] - camera_movement[0],
+                                         position[1] - camera_movement[1])
+                    tracks[obj][frame_num][track_id]['position_adjusted'] = position_adjusted
 
     def get_camera_movement(self, frames, read_from_file = False, file_path = None):
         # read file if already present

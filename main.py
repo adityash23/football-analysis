@@ -1,6 +1,7 @@
 from tracker import Tracker
 from utils import read_video, save_video
-from analysis import TeamAssigner, PlayerBallAssigner, CameraMovementEstimator
+from analysis import TeamAssigner, PlayerBallAssigner, \
+    CameraMovementEstimator, ViewTransformer, SpeedDistanceEstimator
 import cv2 
 import numpy as np
 
@@ -39,14 +40,27 @@ def main():
     tracker = Tracker('models/best.pt')
     tracks = tracker.get_object_tracks(video_frames, read_from_file=True, file_path='tracks/tracks.pkl')
 
+    # get object positions
+    tracker.add_position_to_tracks(tracks)
+
     # handle camera movement
     cam_movement_estimator = CameraMovementEstimator(video_frames[0])
     cam_movement_per_frame = cam_movement_estimator.get_camera_movement(video_frames,
                                                                         read_from_file=True, 
                                                                         file_path='stubs/camera_movement.pkl')
 
+    cam_movement_estimator.adjust_positions(tracks, cam_movement_per_frame)
+
+    # perspective transformer
+    view_transformer = ViewTransformer()
+    view_transformer.add_transformed_position(tracks)
+
     # interpolate ball 
     tracks['ball'] = tracker.interpolate_ball(tracks['ball'])
+
+    # speed and dist estimator
+    speed_dist_estimator = SpeedDistanceEstimator()
+    speed_dist_estimator.draw_speed_distance(output_video_frames, tracks)
 
     # assign teams
     team_assigner = TeamAssigner()

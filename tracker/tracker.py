@@ -6,7 +6,7 @@ import numpy as np
 import os
 import sys
 sys.path.append('../') # move 1 folder up in heirarchy
-from utils import get_center, get_width
+from utils import get_center, get_width, get_foot_position
 import pandas as pd
 
 class Tracker:
@@ -14,6 +14,17 @@ class Tracker:
         self.model = YOLO(model_path)
         self.tracker = supervision.ByteTrack() # to prevent ID changes for objects 
         # ex - goal keeper changes to player in some frames
+
+    def add_position_to_tracks(self, tracks):
+        for obj, obj_tracks in tracks.items():
+            for frame_num, track in enumerate(obj_tracks):
+                for track_id, track_info in track.items():
+                    bounding_box = track_info['bounding_box']
+                    if obj == 'ball':
+                        position = get_center(bounding_box)
+                    else:
+                        position = get_foot_position(bounding_box)
+                    tracks[obj][frame_num][track_id]['position'] = position
 
     def interpolate_ball(self, ball_positions):
         # if ball not detected in some frames, the triangle tracker disappears between frame A and B
